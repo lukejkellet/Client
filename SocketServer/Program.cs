@@ -22,14 +22,40 @@ namespace SocketServer
                 listenerSocket.Bind(ipep);
                 //Call Listen Method
                 listenerSocket.Listen(5);
-                //Call Accept Method
-                Socket client = listenerSocket.Accept();
-                //Print out client ip end point
-                Console.WriteLine("Client Connected " + client.ToString() + " " + client.RemoteEndPoint.ToString());
+
                 //Define buffer
                 byte[] buff = new byte[128];
                 //Define number of received bytes
                 int numberOfReceivedBytes = 0;
+                while (true)
+                {
+                    //Call Accept Method
+                    Socket client = listenerSocket.Accept();
+
+                    //Start new thread
+                    Thread clientThread = new Thread(() => ClientHandler(client));
+                    clientThread.Start();
+
+
+                    
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        static void ClientHandler(Socket client)
+        {
+            try
+            {
+                //Print out client ip end point
+                Console.WriteLine("Client Connected " + client.ToString() + " " + client.RemoteEndPoint.ToString());
+
+                byte[] buff = new byte[128];
+                int numberOfReceivedBytes = 0;
+
                 while (true)
                 {
                     numberOfReceivedBytes = client.Receive(buff);
@@ -37,13 +63,8 @@ namespace SocketServer
                     //Convert from byte array to ascii, using encoding.ascii.getstring
                     Console.WriteLine("Data sent by client: " + Encoding.ASCII.GetString(buff, 0, numberOfReceivedBytes));
                     string receivedText = Encoding.ASCII.GetString(buff, 0, numberOfReceivedBytes);
-                    //print out received text
-                    Console.WriteLine("Data sent by client: " + receivedText);
-                    //Input response to send to client
-                    Console.WriteLine("Please enter the response to send to client: ");
-                    string responseText = Console.ReadLine();
                     //Send back to client
-                    buff = Encoding.ASCII.GetBytes(responseText);
+                    buff = Encoding.ASCII.GetBytes(receivedText);
                     client.Send(buff);
                     if (receivedText == "x")
                     {
@@ -52,8 +73,8 @@ namespace SocketServer
                     Array.Clear(buff, 0, buff.Length);
                     numberOfReceivedBytes = 0;
                 }
-            }
-            catch (Exception ex)
+                client.Close();
+            } catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
